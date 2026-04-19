@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hridoy Blood Bank | Admin Panel</title>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&family=Outfit:wght@300;500;700&display=swap" rel="stylesheet">
+
+<style>
+    :root {
+        --primary: #ff3b3b;
+        --secondary: #d32f2f;
+        --dark: #0f172a;
+        --glass: rgba(255, 255, 255, 0.95);
+        --shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+        font-family: 'Outfit', sans-serif;
+        background: #f8fafc;
+        color: var(--dark);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        flex-direction: column;
+        padding: 20px;
+    }
+
+    .login-container {
+        width: 100%;
+        max-width: 420px;
+        background: var(--glass);
+        padding: 40px 30px;
+        border-radius: 24px;
+        box-shadow: var(--shadow);
+        text-align: center;
+    }
+
+    .logo-icon { font-size: 60px; margin-bottom: 15px; }
+    h2 { font-weight: 800; font-family: 'Poppins', sans-serif; color: var(--secondary); margin-bottom: 10px; }
+    input { width: 100%; padding: 14px; border: 2px solid #e2e8f0; border-radius: 12px; margin-bottom: 15px; outline: none; }
+
+    .btn-action {
+        width: 100%; padding: 16px; background: linear-gradient(45deg, var(--primary), var(--secondary));
+        color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; transition: 0.3s;
+    }
+
+    #uploadPanel { display: none; width: 100%; max-width: 950px; }
+    .card { background: white; padding: 25px; border-radius: 20px; box-shadow: var(--shadow); margin-bottom: 20px; }
+
+    textarea {
+        width: 100%; height: 120px; border: 2px solid #f1f5f9; background: #f8fafc;
+        border-radius: 12px; padding: 15px; font-family: monospace; resize: none; margin-bottom: 15px;
+    }
+
+    .table-container { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; min-width: 700px; }
+    th { background: #f8fafc; padding: 12px; font-size: 13px; color: #64748b; text-align: left; }
+    td { padding: 12px; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
+    
+    .blood-badge {
+        background: #ffecec; color: var(--primary); padding: 4px 8px;
+        border-radius: 6px; font-weight: 700;
+    }
+
+    .date-badge {
+        background: #f1f5f9; color: #475569; padding: 4px 8px;
+        border-radius: 6px; font-size: 12px;
+    }
+
+    .btn-delete {
+        background: #ff4d4d; color: white; border: none; padding: 6px 12px;
+        border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;
+    }
+    .btn-delete:hover { background: #cc0000; }
+
+    .error-msg { color: #ef4444; font-weight: 700; margin-top: 10px; }
+</style>
+</head>
+<body>
+
+<div class="login-container" id="loginBox">
+    <div class="logo-icon">🩸</div>
+    <h2>Hridoy Blood Bank 
+<br>Admin Login</h2>
+    <input type="text" id="username" placeholder="Username">
+    <input type="password" id="password" placeholder="Password">
+    <button class="btn-action" onclick="checkLogin()">Enter Panel</button>
+    <div id="loginStatus"></div>
+</div>
+
+<div id="uploadPanel">
+    <div class="card">
+        <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h2 style="margin:0; font-size: 20px;">Admin Dashboard</h2>
+            <button onclick="location.reload()" style="background:#64748b; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer;">Logout</button>
+        </div>
+        
+        <textarea id="jsonInput" placeholder='Paste JSON here...'></textarea>
+        <button class="btn-action" style="padding: 12px;" onclick="processUpload()">Upload Donors</button>
+        <p id="uploadStatus" style="text-align:center; font-size: 13px; margin-top: 8px;"></p>
+    </div>
+
+    <div class="card">
+        <h3 style="margin-bottom: 15px; font-size: 18px;">📋 Donors List (<span id="donorCount">0</span>)</h3>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Group</th>
+                        <th>Phone</th>
+                        <th>Address</th>
+                        <th>Last Donate</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="donorTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+const firebaseConfig = {
+    apiKey: "AIzaSyCDX-z22aHNgIO3dzmZ7iOPolCuT-XC_eA",
+    databaseURL: "https://hridoy-blood-bank-bangla-ce1d3-default-rtdb.firebaseio.com"
+};
+firebase.initializeApp(firebaseConfig);
+const fireDb = firebase.database();
+
+function checkLogin() {
+    const user = document.getElementById("username").value;
+    const pass = document.getElementById("password").value;
+    if(user === "hridoybloodbank" && pass === "335877") {
+        document.getElementById("loginBox").style.display = "none";
+        document.getElementById("uploadPanel").style.display = "block";
+        loadDonors();
+    } else {
+        document.getElementById("loginStatus").innerHTML = "<p class='error-msg'>❌ Invalid Credentials!</p>";
+    }
+}
+
+function loadDonors() {
+    fireDb.ref("donors").on("value", (snapshot) => {
+        const tbody = document.getElementById("donorTableBody");
+        const countSpan = document.getElementById("donorCount");
+        tbody.innerHTML = "";
+        let count = 0;
+
+        snapshot.forEach((childSnapshot) => {
+            const id = childSnapshot.key;
+            const data = childSnapshot.val();
+            count++;
+
+            tbody.innerHTML += `
+                <tr>
+                    <td><strong>${data.name}</strong></td>
+                    <td><span class="blood-badge">${data.bloodGroup || "N/A"}</span></td>
+                    <td>${data.phone}</td>
+                    <td><small>${data.address}</small></td>
+                    <td><span class="date-badge">${data.lastDonate || "N/A"}</span></td>
+                    <td><button class="btn-delete" onclick="deleteDonor('${id}')">Remove</button></td>
+                </tr>
+            `;
+        });
+        countSpan.innerText = count;
+    });
+}
+
+function deleteDonor(id) {
+    fireDb.ref("donors/" + id).remove();
+}
+
+function processUpload() {
+    const input = document.getElementById("jsonInput").value;
+    const status = document.getElementById("uploadStatus");
+
+    try {
+        const data = JSON.parse(input);
+        let list = Array.isArray(data) ? data : [data];
+
+        list.forEach(item => {
+            fireDb.ref("donors").push({
+                name: item.name || "Unknown",
+                phone: item.phone || "N/A",
+                address: item.address || "N/A",
+                bloodGroup: item.bloodGroup || "Not Specified",
+                lastDonate: item.lastDonate || "N/A",
+                time: item.time || Date.now()
+            });
+        });
+
+        status.style.color = "#10b981";
+        status.innerText = "✅ Uploaded successfully!";
+        document.getElementById("jsonInput").value = "";
+        setTimeout(() => { status.innerText = ""; }, 3000);
+    } catch (e) {
+        status.style.color = "#ef4444";
+        status.innerText = "❌ JSON error!";
+    }
+}
+</script>
+
+</body>
+</html>
