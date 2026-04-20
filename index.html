@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hridoy Blood Bank | Admin Pro</title>
+    <title>Hridoy Blood Bank Admin Panel</title>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
@@ -12,114 +12,72 @@
 
     <style>
         :root {
-            --primary: #ff3b3b;
-            --secondary: #d32f2f;
-            --accent: #3b82f6;
-            --success: #10b981;
-            --dark: #0f172a;
-            --light: #f8fafc;
-            --shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            --primary: #ff3b3b; --secondary: #d32f2f; --accent: #3b82f6;
+            --success: #10b981; --dark: #0f172a; --light: #f8fafc;
+            --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
         }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; transition: all 0.2s ease; }
-
-        body {
-            font-family: 'Outfit', sans-serif;
-            background: #f1f5f9;
-            color: var(--dark);
-            padding: 15px;
-        }
-
-        .login-container {
-            max-width: 400px; margin: 80px auto;
-            background: white; padding: 40px; border-radius: 30px;
-            box-shadow: var(--shadow); text-align: center;
-        }
-
-        input, select, textarea {
-            width: 100%; padding: 12px; border: 2px solid #e2e8f0;
-            border-radius: 12px; margin-bottom: 15px; outline: none; font-size: 15px;
-        }
-
-        input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(255, 59, 59, 0.1); }
-
-        .btn-action {
-            width: 100%; padding: 15px; background: linear-gradient(135deg, var(--primary), var(--secondary));
-            color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer;
-        }
-
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Outfit', sans-serif; background: #f1f5f9; color: var(--dark); padding: 15px; }
+        .login-container { max-width: 400px; margin: 80px auto; background: white; padding: 40px; border-radius: 30px; box-shadow: var(--shadow); text-align: center; }
+        input, select, textarea { width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 12px; margin-bottom: 15px; outline: none; }
+        .btn-action { width: 100%; padding: 15px; background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; }
         #uploadPanel { display: none; max-width: 1100px; margin: 0 auto; }
         .card { background: white; padding: 25px; border-radius: 24px; box-shadow: var(--shadow); margin-bottom: 20px; }
-
         .table-container { overflow-x: auto; background: white; border-radius: 15px; }
         table { width: 100%; border-collapse: collapse; min-width: 700px; }
-        th { text-align: left; padding: 15px; color: #64748b; font-weight: 600; background: #f8fafc; border-bottom: 2px solid #f1f5f9; }
-        td { padding: 15px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
-
-        .blood-badge {
-            background: #ffecec; color: var(--primary); padding: 5px 10px;
-            border-radius: 8px; font-weight: 800; font-size: 12px; display: inline-block;
-        }
-
-        .btn-group { display: flex; gap: 6px; }
-        .btn-sm { padding: 8px 10px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; border: none; color: white; display: flex; align-items: center; justify-content: center; }
-        .bg-call { background: var(--success); }
-        .bg-edit { background: var(--accent); }
-        .bg-del { background: #ef4444; }
-
-        #editModal {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); z-index: 1000;
-            justify-content: center; align-items: center;
-        }
-        .modal-content { background: white; padding: 30px; border-radius: 24px; width: 95%; max-width: 450px; }
-        label { font-size: 12px; font-weight: 600; color: #64748b; margin-left: 5px; margin-bottom: 4px; display: block; }
+        th { text-align: left; padding: 12px; background: #f8fafc; border-bottom: 2px solid #f1f5f9; }
+        td { padding: 12px; border-bottom: 1px solid #f1f5f9; }
+        .blood-badge { background: #ffecec; color: var(--primary); padding: 4px 8px; border-radius: 6px; font-weight: 800; font-size: 12px; }
+        .btn-group { display: flex; gap: 5px; }
+        .btn-sm { padding: 8px 12px; border-radius: 8px; font-size: 12px; cursor: pointer; border: none; color: white; display: flex; align-items: center; justify-content: center; text-decoration: none; }
+        .bg-call { background: var(--success); } .bg-edit { background: var(--accent); } .bg-del { background: #ef4444; }
+        #editModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-content { background: white; padding: 25px; border-radius: 20px; width: 90%; max-width: 450px; }
+        #loadingOverlay { position: fixed; inset: 0; background: white; display: none; justify-content: center; align-items: center; z-index: 2000; font-weight: bold; }
+        h1.main-title { text-align: center; color: var(--primary); margin-bottom: 20px; font-weight: 800; }
     </style>
 </head>
 <body>
 
+<div id="loadingOverlay">Loading...</div>
+
 <div class="login-container" id="loginBox">
-    <div style="font-size: 50px;">🩸</div>
+    <div style="font-size: 40px;">🩸</div>
     <h2 style="margin: 10px 0 20px;">Hridoy Blood Bank <br>Admin Panel</h2>
-    <input type="password" id="password" placeholder="Enter Password">
-    <button class="btn-action" onclick="checkLogin()">Login Panel</button>
-    <div id="loginStatus" style="margin-top:15px;"></div>
+    <input type="password" id="password" placeholder="Admin Password">
+    <button class="btn-action" onclick="checkLogin()">Login</button>
 </div>
 
 <div id="uploadPanel">
+    <h1 class="main-title">Hridoy Blood Bank <br> Admin Panel</h1>
+    
     <div class="card">
-        <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-            <h3>Admin Dashboard</h3>
-            <button onclick="location.reload()" style="background:#f1f5f9; border:none; padding:8px 16px; border-radius:10px; cursor:pointer; font-weight:600;">Logout</button>
+        <div style="display:flex; justify-content: space-between; align-items: center;">
+            <h3>Quick Dashboard</h3>
+            <button onclick="location.reload()" style="padding:5px 15px; border-radius:8px; cursor:pointer; background:#eee; border:none;">Logout</button>
         </div>
-        <textarea id="jsonInput" placeholder='Paste JSON donors list here...' style="height: 80px;"></textarea>
-        <button class="btn-action" onclick="processUpload()">Instant Bulk Upload</button>
-        <p id="uploadStatus" style="text-align:center; margin-top:8px; font-weight:600;"></p>
+        <textarea id="jsonInput" placeholder="Paste JSON here for bulk upload..." style="height: 60px; margin-top: 15px;"></textarea>
+        <button class="btn-action" onclick="processUpload()">Bulk Upload</button>
     </div>
 
     <div class="card">
-        <h3 style="margin-bottom: 15px;">📋 Donors (<span id="donorCount">0</span>)</h3>
-        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 12px; margin-bottom: 15px;">
-            <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="Search name, phone or address...">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+            <h3>Donors List: <span id="donorCount">0</span></h3>
+            <button onclick="loadDonors()" style="padding: 5px 10px; cursor:pointer; border-radius:8px; border:1px solid #ddd;">🔄 Refresh List</button>
+        </div>
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 10px; margin-bottom: 15px;">
+            <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="Search by name, phone or location...">
             <select id="groupFilter" onchange="filterTable()">
-                <option value="">All Groups</option>
+                <option value="">Groups</option>
                 <option value="A+">A+</option><option value="A-">A-</option>
                 <option value="B+">B+</option><option value="B-">B-</option>
                 <option value="O+">O+</option><option value="O-">O-</option>
                 <option value="AB+">AB+</option><option value="AB-">AB-</option>
             </select>
         </div>
-
         <div class="table-container">
             <table>
-                <thead>
-                    <tr>
-                        <th>Donor Details</th>
-                        <th>Group</th>
-                        <th>Address</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
+                <thead><tr><th>Donor</th><th>Group</th><th>Address</th><th>Actions</th></tr></thead>
                 <tbody id="donorTableBody"></tbody>
             </table>
         </div>
@@ -128,40 +86,20 @@
 
 <div id="editModal">
     <div class="modal-content">
-        <h3 style="margin-bottom: 15px;">Edit Information</h3>
+        <h3>Edit Donor Information</h3>
         <input type="hidden" id="editId">
-        
-        <label>Name</label>
-        <input type="text" id="editName">
-        
-        <label>Phone</label>
-        <input type="text" id="editPhone">
-        
+        <label>Name</label><input type="text" id="editName">
+        <label>Phone</label><input type="text" id="editPhone">
         <label>Blood Group</label>
-        <select id="editGroup">
-            <option value="A+">A+</option><option value="A-">A-</option>
-            <option value="B+">B+</option><option value="B-">B-</option>
-            <option value="O+">O+</option><option value="O-">O-</option>
-            <option value="AB+">AB+</option><option value="AB-">AB-</option>
-        </select>
-
+        <select id="editGroup"><option value="A+">A+</option><option value="B+">B+</option><option value="O+">O+</option><option value="AB+">AB+</option><option value="A-">A-</option><option value="B-">B-</option><option value="O-">O-</option><option value="AB-">AB-</option></select>
         <label>District</label>
-        <select id="editDistrict" onchange="loadUpazilas()">
-            <option value="">Select District</option>
-        </select>
-
+        <select id="editDistrict" onchange="loadUpazilas()"><option value="">Select District</option></select>
         <label>Upazila</label>
-        <select id="editUpazila">
-            <option value="">Select Upazila</option>
-        </select>
-
-        <label>Area Details (Optional)</label>
-        <input type="text" id="editArea" placeholder="Village/House/Road">
-
-        <div style="display:flex; gap: 10px; margin-top: 10px;">
-            <button class="btn-action" style="background: var(--success);" onclick="updateDonor()">Update</button>
-            <button class="btn-action" style="background: #94a3b8;" onclick="closeModal()">Close</button>
-        </div>
+        <select id="editUpazila"><option value="">Select Upazila</option></select>
+        <label>Village/Area</label>
+        <input type="text" id="editArea">
+        <button class="btn-action" onclick="updateDonor()">Update Now</button>
+        <button onclick="closeModal()" style="width:100%; margin-top:10px; border:none; background:none; cursor:pointer; color:gray;">Cancel</button>
     </div>
 </div>
 
@@ -240,12 +178,10 @@ const bdData = {
     "Thakurgaon": ["Thakurgaon Sadar", "Baliadangi", "Haripur", "Pirganj", "Ranisankail"]
 };
 
-// জেলা ড্রপডাউন লোড করা
+// District Dropdown initialization
 const distSelect = document.getElementById("editDistrict");
 Object.keys(bdData).sort().forEach(dist => {
-    let opt = document.createElement("option");
-    opt.value = dist;
-    opt.innerText = dist;
+    let opt = document.createElement("option"); opt.value = dist; opt.innerText = dist;
     distSelect.appendChild(opt);
 });
 
@@ -255,9 +191,7 @@ function loadUpazilas() {
     upaSelect.innerHTML = '<option value="">Select Upazila</option>';
     if(dist && bdData[dist]) {
         bdData[dist].sort().forEach(upa => {
-            let opt = document.createElement("option");
-            opt.value = upa;
-            opt.innerText = upa;
+            let opt = document.createElement("option"); opt.value = upa; opt.innerText = upa;
             upaSelect.appendChild(opt);
         });
     }
@@ -266,49 +200,42 @@ function loadUpazilas() {
 let allDonors = [];
 
 function checkLogin() {
-    const pass = document.getElementById("password").value;
-    if(pass === "335877") {
+    if(document.getElementById("password").value === "335877") {
         document.getElementById("loginBox").style.display = "none";
         document.getElementById("uploadPanel").style.display = "block";
         loadDonors();
-    } else {
-        document.getElementById("loginStatus").innerHTML = "<b style='color:red;'>Incorrect Password!</b>";
-    }
+    } else alert("Incorrect Password!");
 }
 
-function loadDonors() {
-    fireDb.ref("donors").on("value", (snapshot) => {
+async function loadDonors() {
+    document.getElementById("loadingOverlay").style.display = "flex";
+    try {
+        const snapshot = await fireDb.ref("donors").once("value");
         allDonors = [];
-        snapshot.forEach((child) => {
-            allDonors.push({ id: child.key, ...child.val() });
-        });
+        snapshot.forEach(child => { allDonors.push({ id: child.key, ...child.val() }); });
+        allDonors.reverse();
         renderTable(allDonors);
-    });
+    } catch (e) { console.error(e); }
+    document.getElementById("loadingOverlay").style.display = "none";
 }
 
 function renderTable(data) {
     const tbody = document.getElementById("donorTableBody");
     document.getElementById("donorCount").innerText = data.length;
-    tbody.innerHTML = "";
-    data.forEach((item) => {
-        tbody.innerHTML += `
-            <tr>
-                <td>
-                    <div style="font-weight:700;">${item.name}</div>
-                    <div style="font-size:12px; color:#64748b;">📞 ${item.phone}</div>
-                </td>
-                <td><span class="blood-badge">${item.bloodGroup}</span></td>
-                <td><div style="font-size:13px; color:#475569;">📍 ${item.address || 'N/A'}</div></td>
-                <td>
-                    <div class="btn-group">
-                        <a href="tel:${item.phone}" class="btn-sm bg-call">📞</a>
-                        <button class="btn-sm bg-edit" onclick="openEditModal('${item.id}', '${item.name}', '${item.phone}', '${item.bloodGroup}', '${item.address || ""}')">Edit</button>
-                        <button class="btn-sm bg-del" onclick="deleteDonor('${item.id}')">Del</button>
-                    </div>
-                </td>
-            </tr>
-        `;
+    let html = "";
+    data.forEach(item => {
+        html += `<tr>
+            <td><b>${item.name}</b><br><small>📞 ${item.phone}</small></td>
+            <td><span class="blood-badge">${item.bloodGroup}</span></td>
+            <td><small>📍 ${item.address || 'N/A'}</small></td>
+            <td><div class="btn-group">
+                <a href="tel:${item.phone}" class="btn-sm bg-call" title="Call">📞</a>
+                <button class="btn-sm bg-edit" onclick="openEditModal('${item.id}','${item.name}','${item.phone}','${item.bloodGroup}','${item.address || ''}')">Edit</button>
+                <button class="btn-sm bg-del" onclick="deleteDonor('${item.id}')">Del</button>
+            </div></td>
+        </tr>`;
     });
+    tbody.innerHTML = html;
 }
 
 function filterTable() {
@@ -322,44 +249,45 @@ function filterTable() {
 }
 
 function deleteDonor(id) {
-    if(confirm("Confirm deletion?")) fireDb.ref("donors/" + id).remove();
+    if(confirm("Are you sure you want to delete this donor?")) {
+        fireDb.ref("donors/" + id).remove().then(() => loadDonors());
+    }
 }
 
-function openEditModal(id, name, phone, group, address) {
+function openEditModal(id, name, phone, group, addr) {
     document.getElementById("editId").value = id;
     document.getElementById("editName").value = name;
     document.getElementById("editPhone").value = phone;
     document.getElementById("editGroup").value = group;
-    document.getElementById("editArea").value = address;
+    document.getElementById("editArea").value = addr;
     document.getElementById("editModal").style.display = "flex";
 }
 
 function closeModal() { document.getElementById("editModal").style.display = "none"; }
 
-function updateDonor() {
+async function updateDonor() {
     const id = document.getElementById("editId").value;
     const area = document.getElementById("editArea").value;
     const upa = document.getElementById("editUpazila").value;
     const dist = document.getElementById("editDistrict").value;
     
-    // ঠিকানা গঠন করা
-    let finalAddress = area;
-    if(upa) finalAddress += (finalAddress ? ", " : "") + upa;
-    if(dist) finalAddress += (finalAddress ? ", " : "") + dist;
-
-    fireDb.ref("donors/" + id).update({
+    let fullAddress = area;
+    if(upa) fullAddress += (fullAddress ? ", " : "") + upa;
+    if(dist) fullAddress += (fullAddress ? ", " : "") + dist;
+    
+    await fireDb.ref("donors/" + id).update({
         name: document.getElementById("editName").value,
         phone: document.getElementById("editPhone").value,
         bloodGroup: document.getElementById("editGroup").value,
-        address: finalAddress || "N/A"
-    }).then(closeModal);
+        address: fullAddress || area
+    });
+    closeModal();
+    loadDonors();
 }
 
 function processUpload() {
-    const input = document.getElementById("jsonInput").value;
-    const status = document.getElementById("uploadStatus");
     try {
-        const data = JSON.parse(input);
+        const data = JSON.parse(document.getElementById("jsonInput").value);
         let list = Array.isArray(data) ? data : [data];
         const updates = {};
         list.forEach(item => {
@@ -367,22 +295,18 @@ function processUpload() {
             updates['/donors/' + newKey] = {
                 name: item.name || "Unknown",
                 phone: item.phone || "N/A",
-                bloodGroup: item.bloodGroup || "N/A",
+                bloodGroup: item.bloodGroup || item.group || "N/A",
                 address: item.address || "N/A",
                 time: Date.now()
             };
         });
         fireDb.ref().update(updates).then(() => {
-            status.style.color = "green";
-            status.innerText = "Uploaded! 🎉";
+            alert("Bulk Upload Successful!");
             document.getElementById("jsonInput").value = "";
+            loadDonors();
         });
-    } catch (e) {
-        status.style.color = "red";
-        status.innerText = "Invalid JSON! ❌";
-    }
+    } catch(e) { alert("Invalid JSON Format!"); }
 }
 </script>
-
 </body>
 </html>
