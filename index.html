@@ -30,7 +30,6 @@
             padding: 15px;
         }
 
-        /* Login Section */
         .login-container {
             max-width: 400px; margin: 80px auto;
             background: white; padding: 40px; border-radius: 30px;
@@ -42,21 +41,16 @@
             border-radius: 12px; margin-bottom: 15px; outline: none; font-size: 15px;
         }
 
-        input:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(255, 59, 59, 0.1); }
+        input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(255, 59, 59, 0.1); }
 
         .btn-action {
             width: 100%; padding: 15px; background: linear-gradient(135deg, var(--primary), var(--secondary));
             color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer;
         }
 
-        /* Dashboard Layout */
         #uploadPanel { display: none; max-width: 1100px; margin: 0 auto; }
         .card { background: white; padding: 25px; border-radius: 24px; box-shadow: var(--shadow); margin-bottom: 20px; }
 
-        .controls { display: grid; grid-template-columns: 2fr 1fr; gap: 12px; margin-bottom: 15px; }
-        .controls input, .controls select { margin-bottom: 0; }
-
-        /* Table Styling */
         .table-container { overflow-x: auto; background: white; border-radius: 15px; }
         table { width: 100%; border-collapse: collapse; min-width: 700px; }
         th { text-align: left; padding: 15px; color: #64748b; font-weight: 600; background: #f8fafc; border-bottom: 2px solid #f1f5f9; }
@@ -67,21 +61,18 @@
             border-radius: 8px; font-weight: 800; font-size: 12px; display: inline-block;
         }
 
-        /* Action Buttons */
         .btn-group { display: flex; gap: 6px; }
-        .btn-sm { padding: 8px 10px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; border: none; color: white; text-decoration: none; display: flex; align-items: center; justify-content: center; }
+        .btn-sm { padding: 8px 10px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; border: none; color: white; display: flex; align-items: center; justify-content: center; }
         .bg-call { background: var(--success); }
         .bg-edit { background: var(--accent); }
         .bg-del { background: #ef4444; }
 
-        /* Modal */
         #editModal {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); z-index: 1000;
             justify-content: center; align-items: center;
         }
-        .modal-content { background: white; padding: 30px; border-radius: 24px; width: 95%; max-width: 400px; }
-
+        .modal-content { background: white; padding: 30px; border-radius: 24px; width: 95%; max-width: 450px; }
         label { font-size: 12px; font-weight: 600; color: #64748b; margin-left: 5px; margin-bottom: 4px; display: block; }
     </style>
 </head>
@@ -89,10 +80,9 @@
 
 <div class="login-container" id="loginBox">
     <div style="font-size: 50px;">🩸</div>
-    <h2 style="margin: 10px 0 20px;">Hridoy Blood bank <br>Admin Panel</h2>
-    <input type="text" id="username" placeholder="Username">
-    <input type="password" id="password" placeholder="Password">
-    <button class="btn-action" onclick="checkLogin()">login panel </button>
+    <h2 style="margin: 10px 0 20px;">Hridoy Blood Bank <br>Admin Panel</h2>
+    <input type="password" id="password" placeholder="Enter Password">
+    <button class="btn-action" onclick="checkLogin()">Login Panel</button>
     <div id="loginStatus" style="margin-top:15px;"></div>
 </div>
 
@@ -102,14 +92,14 @@
             <h3>Admin Dashboard</h3>
             <button onclick="location.reload()" style="background:#f1f5f9; border:none; padding:8px 16px; border-radius:10px; cursor:pointer; font-weight:600;">Logout</button>
         </div>
-        <textarea id="jsonInput" placeholder='Paste JSON donors list here for instant upload...' style="height: 80px;"></textarea>
+        <textarea id="jsonInput" placeholder='Paste JSON donors list here...' style="height: 80px;"></textarea>
         <button class="btn-action" onclick="processUpload()">Instant Bulk Upload</button>
         <p id="uploadStatus" style="text-align:center; margin-top:8px; font-weight:600;"></p>
     </div>
 
     <div class="card">
         <h3 style="margin-bottom: 15px;">📋 Donors (<span id="donorCount">0</span>)</h3>
-        <div class="controls">
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 12px; margin-bottom: 15px;">
             <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="Search name, phone or address...">
             <select id="groupFilter" onchange="filterTable()">
                 <option value="">All Groups</option>
@@ -155,8 +145,18 @@
             <option value="AB+">AB+</option><option value="AB-">AB-</option>
         </select>
 
-        <label>Address</label>
-        <input type="text" id="editAddress">
+        <label>District</label>
+        <select id="editDistrict" onchange="loadUpazilas()">
+            <option value="">Select District</option>
+        </select>
+
+        <label>Upazila</label>
+        <select id="editUpazila">
+            <option value="">Select Upazila</option>
+        </select>
+
+        <label>Area Details (Optional)</label>
+        <input type="text" id="editArea" placeholder="Village/House/Road">
 
         <div style="display:flex; gap: 10px; margin-top: 10px;">
             <button class="btn-action" style="background: var(--success);" onclick="updateDonor()">Update</button>
@@ -173,17 +173,106 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const fireDb = firebase.database();
 
+const bdData = {
+    "Bagerhat": ["Bagerhat Sadar", "Chitalmari", "Fakirhat", "Kachua", "Mollahat", "Mongla", "Morrelganj", "Rampal", "Sarankhola"],
+    "Bandarban": ["Bandarban Sadar", "Thanchi", "Lama", "Naikhongchhari", "Ali Kadam", "Rowangchhari", "Ruma"],
+    "Barguna": ["Barguna Sadar", "Amtali", "Betagi", "Bamna", "Patharghata", "Taltali"],
+    "Barishal": ["Barishal Sadar", "Bakerganj", "Babuganj", "Wazirpur", "Banaripara", "Gournadi", "Agailjhara", "Mehendiganj", "Muladi", "Hizla"],
+    "Bhola": ["Bhola Sadar", "Borhanuddin", "Char Fasson", "Daulatkhan", "Lalmohan", "Manpura", "Tazumuddin"],
+    "Bogra": ["Bogra Sadar", "Adamdighi", "Dhunat", "Dhupchanchia", "Gabtali", "Kahaloo", "Nandigram", "Sariakandi", "Shajahanpur", "Sherpur", "Shibganj", "Sonatala"],
+    "Brahmanbaria": ["Brahmanbaria Sadar", "Ashuganj", "Akhaura", "Bancharampur", "Bijoynagar", "Kasba", "Nabinagar", "Nasirnagar", "Sarail"],
+    "Chandpur": ["Chandpur Sadar", "Faridganj", "Haimchar", "Haziganj", "Kachua", "Matlab North", "Matlab South", "Shahrasti"],
+    "Chapai Nawabganj": ["Chapai Nawabganj Sadar", "Bholahat", "Gomastapur", "Nachole", "Shibganj"],
+    "Chattogram": ["Chattogram Sadar", "Anwara", "Banshkhali", "Boalkhali", "Chandanaish", "Fatickchhari", "Hathazari", "Lohagara", "Mirsharai", "Patiya", "Rangunia", "Raozan", "Sandwip", "Satkania", "Sitakunda"],
+    "Chuadanga": ["Chuadanga Sadar", "Alamdanga", "Damurhuda", "Jibannagar"],
+    "Cumilla": ["Cumilla Sadar", "Barura", "Brahmanpara", "Burichang", "Chandina", "Chauddagram", "Daudkandi", "Debidwar", "Homna", "Laksam", "Lalmai", "Meghna", "Monohargonj", "Muradnagar", "Nangalkot", "Titas"],
+    "Cox's Bazar": ["Cox's Bazar Sadar", "Chakaria", "Kutubdia", "Maheshkhali", "Ramu", "Teknaf", "Ukhia", "Pekua"],
+    "Dhaka": ["Dhaka Sadar", "Dhamrai", "Dohar", "Keraniganj", "Nawabganj", "Savar"],
+    "Dinajpur": ["Dinajpur Sadar", "Birampur", "Birganj", "Biral", "Bochaganj", "Chirirbandar", "Phulbari", "Ghoraghat", "Hakimpur", "Kaharole", "Khansama", "Nawabganj", "Parbatipur"],
+    "Faridpur": ["Faridpur Sadar", "Alfadanga", "Bhanga", "Boalmari", "Charbhadrasan", "Madukhali", "Nagarkanda", "Sadarpur", "Saltha"],
+    "Feni": ["Feni Sadar", "Chhagalnaiya", "Daganbhuiyan", "Parshuram", "Sonagazi", "Fulgazi"],
+    "Gaibandha": ["Gaibandha Sadar", "Phulchhari", "Gobindaganj", "Palashbari", "Sadullapur", "Saghata", "Sundarganj"],
+    "Gazipur": ["Gazipur Sadar", "Kaliakair", "Kaliganj", "Kapasia", "Sreepur"],
+    "Gopalganj": ["Gopalganj Sadar", "Kashiani", "Kotalipara", "Muksudpur", "Tungipara"],
+    "Habiganj": ["Habiganj Sadar", "Ajmiriganj", "Bahubal", "Baniyachong", "Chunarughat", "Lakhai", "Madhabpur", "Nabiganj", "Sayestaganj"],
+    "Jamalpur": ["Jamalpur Sadar", "Bakshiganj", "Dewanganj", "Islampur", "Madarganj", "Melandaha", "Sarishabari"],
+    "Jashore": ["Jashore Sadar", "Abhaynagar", "Bagherpara", "Chaugachha", "Jhikargachha", "Keshabpur", "Manirampur", "Sharsha"],
+    "Jhalokathi": ["Jhalokathi Sadar", "Kathalia", "Nalchity", "Rajapur"],
+    "Jhenaidah": ["Jhenaidah Sadar", "Harinakunda", "Kaliganj", "Kotchandpur", "Maheshpur", "Shailkupa"],
+    "Joypurhat": ["Joypurhat Sadar", "Akkelpur", "Kalai", "Khetlal", "Panchbibi"],
+    "Khagrachhari": ["Khagrachhari Sadar", "Dighinala", "Lakshmichhari", "Mahalchhari", "Manikchhari", "Matiranga", "Panchhari", "Ramgarh"],
+    "Khulna": ["Khulna Sadar", "Batiaghata", "Dacope", "Dumuria", "Dighalia", "Koyra", "Paikgachha", "Phultala", "Rupsha", "Terokhada"],
+    "Kishoreganj": ["Kishoreganj Sadar", "Austagram", "Bajitpur", "Bhairab", "Hossainpur", "Itna", "Karimganj", "Katiadi", "Kuliarchar", "Mithamain", "Nikli", "Pakundia", "Tarail"],
+    "Kurigram": ["Kurigram Sadar", "Bhurungamari", "Char Rajibpur", "Chilmari", "Phulbari", "Nageshwari", "Rajarhat", "Roumari", "Ulipur"],
+    "Kushtia": ["Kushtia Sadar", "Bheramara", "Daulatpur", "Khoksa", "Kumarkhali", "Mirpur"],
+    "Lakshmipur": ["Lakshmipur Sadar", "Raipur", "Ramganj", "Ramgati", "Kamalnagar"],
+    "Lalmonirhat": ["Lalmonirhat Sadar", "Aditmari", "Hatibandha", "Kaliganj", "Patgram"],
+    "Madaripur": ["Madaripur Sadar", "Kalkini", "Rajoir", "Shibchar"],
+    "Magura": ["Magura Sadar", "Mohammadpur", "Shalikha", "Sreepur"],
+    "Manikganj": ["Manikganj Sadar", "Singair", "Shibalaya", "Saturia", "Harirampur", "Ghirior", "Daulatpur"],
+    "Meherpur": ["Meherpur Sadar", "Gangni", "Mujibnagar"],
+    "Moulvibazar": ["Moulvibazar Sadar", "Barlekha", "Juri", "Kamalganj", "Kulaura", "Rajnagar", "Sreemangal"],
+    "Munshiganj": ["Munshiganj Sadar", "Gazaria", "Lohajang", "Sirajdikhan", "Sreenagar", "Tongibari"],
+    "Mymensingh": ["Mymensingh Sadar", "Bhaluka", "Dhobaura", "Fulbaria", "Gaffargaon", "Gauripur", "Haluaghat", "Ishwarganj", "Muktagachha", "Nandail", "Phulpur", "Trishal", "Tara Khanda"],
+    "Naogaon": ["Naogaon Sadar", "Atrai", "Badalgachhi", "Dhamoirhat", "Manda", "Mahadevpur", "Niamatpur", "Patnitala", "Porsha", "Raninagar", "Sapahar"],
+    "Narail": ["Narail Sadar", "Kalia", "Lohagara"],
+    "Narayanganj": ["Narayanganj Sadar", "Araihazar", "Bandar", "Rupganj", "Sonargaon"],
+    "Narsingdi": ["Narsingdi Sadar", "Belabo", "Monohardi", "Palash", "Raipura", "Shibpur"],
+    "Natore": ["Natore Sadar", "Bagatipara", "Baraigram", "Gurudaspur", "Lalpur", "Singra", "Naldanga"],
+    "Netrokona": ["Netrokona Sadar", "Atpara", "Barhatta", "Durgapur", "Khaliajuri", "Kalmakanda", "Kendua", "Madan", "Mohanganj", "Purbadhala"],
+    "Nilphamari": ["Nilphamari Sadar", "Dimla", "Domar", "Jaldhaka", "Kishoreganj", "Saidpur"],
+    "Noakhali": ["Noakhali Sadar", "Begumganj", "Chatkhil", "Companyganj", "Hatiya", "Senbagh", "Sonaimuri", "Subarnachar", "Kabirhat"],
+    "Pabna": ["Pabna Sadar", "Atgharia", "Bera", "Bhangura", "Chatmohar", "Faridpur", "Ishwardi", "Santhia", "Sujanagar"],
+    "Panchagarh": ["Panchagarh Sadar", "Atwari", "Boda", "Debiganj", "Tetulia"],
+    "Patuakhali": ["Patuakhali Sadar", "Bauphal", "Dashmina", "Galachipa", "Kalapara", "Mirzaganj", "Dumki", "Rangabali"],
+    "Pirojpur": ["Pirojpur Sadar", "Bhandaria", "Kawkhali", "Mathbaria", "Nazirpur", "Nesarabad", "Indurkani"],
+    "Rajbari": ["Rajbari Sadar", "Baliakandi", "Goalandaghat", "Pangsha", "Kalukhali"],
+    "Rajshahi": ["Rajshahi Sadar", "Bagha", "Bagmara", "Charghat", "Durgapur", "Godagari", "Mohanpur", "Paba", "Puthia", "Tanore"],
+    "Rangamati": ["Rangamati Sadar", "Bagaichhari", "Barkal", "Kawkhali", "Belaichhari", "Kaptai", "Juraichhari", "Langadu", "Naniarchar", "Rajasthali"],
+    "Rangpur": ["Rangpur Sadar", "Badarganj", "Gangachara", "Kaunia", "Mithapukur", "Pirgachha", "Pirganj", "Taraganj"],
+    "Satkhira": ["Satkhira Sadar", "Assasuni", "Debhata", "Kalaroa", "Kaliganj", "Shyamnagar", "Tala"],
+    "Shariatpur": ["Shariatpur Sadar", "Bhedarganj", "Damudya", "Gosairhat", "Naria", "Zajira"],
+    "Sherpur": ["Sherpur Sadar", "Jhenaigati", "Nakla", "Nalitabari", "Sreebardi"],
+    "Sirajganj": ["Sirajganj Sadar", "Belkuchi", "Chauhali", "Kamarkhanda", "Kazipur", "Raiganj", "Shahjadpur", "Tarash", "Ullahpara"],
+    "Sunamganj": ["Sunamganj Sadar", "Bishwamandarpur", "Chhatak", "Derai", "Dharamapasha", "Dowarabazar", "Jagannathpur", "Jamalganj", "Sullah", "Tahirpur", "Shantiganj"],
+    "Sylhet": ["Sylhet Sadar", "Balaganj", "Beanibazar", "Bishwanath", "Fenchuganj", "Golapganj", "Gowainghat", "Jaintiapur", "Kanaighat", "Osmani Nagar", "South Surma", "Zakiganj"],
+    "Tangail": ["Tangail Sadar", "Basail", "Bhuapur", "Delduar", "Gopalpur", "Ghatail", "Kalihati", "Madhupur", "Mirzapur", "Nagarpur", "Sakhipur", "Dhanbari"],
+    "Thakurgaon": ["Thakurgaon Sadar", "Baliadangi", "Haripur", "Pirganj", "Ranisankail"]
+};
+
+// জেলা ড্রপডাউন লোড করা
+const distSelect = document.getElementById("editDistrict");
+Object.keys(bdData).sort().forEach(dist => {
+    let opt = document.createElement("option");
+    opt.value = dist;
+    opt.innerText = dist;
+    distSelect.appendChild(opt);
+});
+
+function loadUpazilas() {
+    const dist = distSelect.value;
+    const upaSelect = document.getElementById("editUpazila");
+    upaSelect.innerHTML = '<option value="">Select Upazila</option>';
+    if(dist && bdData[dist]) {
+        bdData[dist].sort().forEach(upa => {
+            let opt = document.createElement("option");
+            opt.value = upa;
+            opt.innerText = upa;
+            upaSelect.appendChild(opt);
+        });
+    }
+}
+
 let allDonors = [];
 
 function checkLogin() {
-    const user = document.getElementById("username").value;
     const pass = document.getElementById("password").value;
-    if(user === "hridoybloodbank" && pass === "335877") {
+    if(pass === "335877") {
         document.getElementById("loginBox").style.display = "none";
         document.getElementById("uploadPanel").style.display = "block";
         loadDonors();
     } else {
-        document.getElementById("loginStatus").innerHTML = "<b style='color:red;'>Invalid!</b>";
+        document.getElementById("loginStatus").innerHTML = "<b style='color:red;'>Incorrect Password!</b>";
     }
 }
 
@@ -201,7 +290,6 @@ function renderTable(data) {
     const tbody = document.getElementById("donorTableBody");
     document.getElementById("donorCount").innerText = data.length;
     tbody.innerHTML = "";
-    
     data.forEach((item) => {
         tbody.innerHTML += `
             <tr>
@@ -213,7 +301,7 @@ function renderTable(data) {
                 <td><div style="font-size:13px; color:#475569;">📍 ${item.address || 'N/A'}</div></td>
                 <td>
                     <div class="btn-group">
-                        <a href="tel:${item.phone}" class="btn-sm bg-call" title="Call">📞</a>
+                        <a href="tel:${item.phone}" class="btn-sm bg-call">📞</a>
                         <button class="btn-sm bg-edit" onclick="openEditModal('${item.id}', '${item.name}', '${item.phone}', '${item.bloodGroup}', '${item.address || ""}')">Edit</button>
                         <button class="btn-sm bg-del" onclick="deleteDonor('${item.id}')">Del</button>
                     </div>
@@ -234,7 +322,7 @@ function filterTable() {
 }
 
 function deleteDonor(id) {
-    fireDb.ref("donors/" + id).remove();
+    if(confirm("Confirm deletion?")) fireDb.ref("donors/" + id).remove();
 }
 
 function openEditModal(id, name, phone, group, address) {
@@ -242,7 +330,7 @@ function openEditModal(id, name, phone, group, address) {
     document.getElementById("editName").value = name;
     document.getElementById("editPhone").value = phone;
     document.getElementById("editGroup").value = group;
-    document.getElementById("editAddress").value = address;
+    document.getElementById("editArea").value = address;
     document.getElementById("editModal").style.display = "flex";
 }
 
@@ -250,15 +338,23 @@ function closeModal() { document.getElementById("editModal").style.display = "no
 
 function updateDonor() {
     const id = document.getElementById("editId").value;
+    const area = document.getElementById("editArea").value;
+    const upa = document.getElementById("editUpazila").value;
+    const dist = document.getElementById("editDistrict").value;
+    
+    // ঠিকানা গঠন করা
+    let finalAddress = area;
+    if(upa) finalAddress += (finalAddress ? ", " : "") + upa;
+    if(dist) finalAddress += (finalAddress ? ", " : "") + dist;
+
     fireDb.ref("donors/" + id).update({
         name: document.getElementById("editName").value,
         phone: document.getElementById("editPhone").value,
         bloodGroup: document.getElementById("editGroup").value,
-        address: document.getElementById("editAddress").value
+        address: finalAddress || "N/A"
     }).then(closeModal);
 }
 
-// সুপার ফাস্ট বাল্ক আপলোড
 function processUpload() {
     const input = document.getElementById("jsonInput").value;
     const status = document.getElementById("uploadStatus");
@@ -266,27 +362,24 @@ function processUpload() {
         const data = JSON.parse(input);
         let list = Array.isArray(data) ? data : [data];
         const updates = {};
-        
         list.forEach(item => {
             const newKey = fireDb.ref().child('donors').push().key;
             updates['/donors/' + newKey] = {
                 name: item.name || "Unknown",
                 phone: item.phone || "N/A",
-                bloodGroup: item.bloodGroup || item.group || "N/A",
+                bloodGroup: item.bloodGroup || "N/A",
                 address: item.address || "N/A",
                 time: Date.now()
             };
         });
-
         fireDb.ref().update(updates).then(() => {
             status.style.color = "green";
-            status.innerText = "Success! JSON Uploaded Instantly 🎉";
+            status.innerText = "Uploaded! 🎉";
             document.getElementById("jsonInput").value = "";
-            setTimeout(() => status.innerText = "", 3000);
         });
     } catch (e) {
         status.style.color = "red";
-        status.innerText = "Invalid JSON Format! ❌";
+        status.innerText = "Invalid JSON! ❌";
     }
 }
 </script>
