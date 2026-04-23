@@ -2,311 +2,641 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hridoy Blood Bank Admin Panel</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Hridoy Blood Bank - Enhanced Admin Panel</title>
 
+    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 
     <style>
-        :root {
-            --primary: #ff3b3b; --secondary: #d32f2f; --accent: #3b82f6;
-            --success: #10b981; --dark: #0f172a; --light: #f8fafc;
-            --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Outfit', sans-serif; background: #f1f5f9; color: var(--dark); padding: 15px; }
-        .login-container { max-width: 400px; margin: 80px auto; background: white; padding: 40px; border-radius: 30px; box-shadow: var(--shadow); text-align: center; }
-        input, select, textarea { width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 12px; margin-bottom: 15px; outline: none; }
-        .btn-action { width: 100%; padding: 15px; background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; }
-        #uploadPanel { display: none; max-width: 1100px; margin: 0 auto; }
-        .card { background: white; padding: 25px; border-radius: 24px; box-shadow: var(--shadow); margin-bottom: 20px; }
-        .table-container { overflow-x: auto; background: white; border-radius: 15px; }
-        table { width: 100%; border-collapse: collapse; min-width: 700px; }
-        th { text-align: left; padding: 12px; background: #f8fafc; border-bottom: 2px solid #f1f5f9; }
-        td { padding: 12px; border-bottom: 1px solid #f1f5f9; }
-        .blood-badge { background: #ffecec; color: var(--primary); padding: 4px 8px; border-radius: 6px; font-weight: 800; font-size: 12px; }
-        .btn-group { display: flex; gap: 5px; }
-        .btn-sm { padding: 8px 12px; border-radius: 8px; font-size: 12px; cursor: pointer; border: none; color: white; display: flex; align-items: center; justify-content: center; text-decoration: none; }
-        .bg-call { background: var(--success); } .bg-edit { background: var(--accent); } .bg-del { background: #ef4444; }
-        #editModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); z-index: 1000; justify-content: center; align-items: center; }
-        .modal-content { background: white; padding: 25px; border-radius: 20px; width: 90%; max-width: 450px; }
-        #loadingOverlay { position: fixed; inset: 0; background: white; display: none; justify-content: center; align-items: center; z-index: 2000; font-weight: bold; }
-        h1.main-title { text-align: center; color: var(--primary); margin-bottom: 20px; font-weight: 800; }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: #f1f5f9;
+            color: #0f172a;
+            padding: 20px;
+        }
+
+        .login-container {
+            max-width: 400px;
+            margin: 80px auto;
+            background: white;
+            padding: 40px 30px;
+            border-radius: 32px;
+            box-shadow: 0 20px 35px -8px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 16px;
+            font-family: inherit;
+            margin-bottom: 16px;
+            transition: 0.2s;
+            outline: none;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            border-color: #ff3b3b;
+            box-shadow: 0 0 0 3px rgba(255,59,59,0.1);
+        }
+
+        .btn-action {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #ff3b3b, #d32f2f);
+            color: white;
+            border: none;
+            border-radius: 40px;
+            font-weight: 700;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.1s ease;
+        }
+        .btn-action:active { transform: scale(0.97); }
+
+        #uploadPanel {
+            display: none;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: white;
+            padding: 24px;
+            border-radius: 28px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+            margin-bottom: 28px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+            gap: 12px;
+            margin-top: 20px;
+        }
+        .stat-item {
+            background: #fef2f2;
+            text-align: center;
+            padding: 12px 6px;
+            border-radius: 20px;
+            font-weight: 700;
+        }
+        .stat-blood { font-size: 20px; color: #b91c1c; }
+        .stat-count { font-size: 26px; font-weight: 800; }
+
+        .table-container {
+            overflow-x: auto;
+            border-radius: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 700px;
+        }
+        th {
+            text-align: left;
+            padding: 14px 12px;
+            background: #f8fafc;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        td {
+            padding: 14px 12px;
+            border-bottom: 1px solid #f1f5f9;
+            vertical-align: middle;
+        }
+        .blood-badge {
+            background: #ffecec;
+            color: #ff3b3b;
+            padding: 5px 12px;
+            border-radius: 40px;
+            font-weight: 700;
+            font-size: 13px;
+            display: inline-block;
+        }
+        .btn-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .btn-sm {
+            padding: 8px 12px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 600;
+            border: none;
+            color: white;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .bg-call { background: #10b981; }
+        .bg-edit { background: #3b82f6; }
+        .bg-del { background: #ef4444; }
+
+        #editModal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background: white;
+            padding: 28px;
+            border-radius: 32px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+        .flex-between {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .page-btn {
+            padding: 6px 14px;
+            border: 1px solid #cbd5e1;
+            background: white;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .page-btn.active {
+            background: #ff3b3b;
+            color: white;
+            border: none;
+        }
+        #loadingOverlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(255,255,255,0.9);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            font-weight: bold;
+            font-size: 20px;
+        }
+        @media (max-width: 640px) {
+            body { padding: 12px; }
+            .btn-sm { padding: 6px 10px; font-size: 11px; }
+        }
+        .search-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .search-bar input, .search-bar select {
+            flex: 1;
+            min-width: 150px;
+            margin-bottom: 0;
+        }
     </style>
 </head>
 <body>
 
-<div id="loadingOverlay">Loading...</div>
+<div id="loadingOverlay"><i class="fas fa-spinner fa-pulse"></i> Loading...</div>
 
+<!-- LOGIN BOX -->
 <div class="login-container" id="loginBox">
-    <div style="font-size: 40px;">🩸</div>
-    <h2 style="margin: 10px 0 20px;">Hridoy Blood Bank <br>Admin Panel</h2>
+    <i class="fas fa-tint" style="font-size: 48px; color:#ff3b3b;"></i>
+    <h2 style="margin: 15px 0;">Hridoy Blood Bank</h2>
+    <p style="margin-bottom: 20px;">Welcome to Admin Panel</p>
     <input type="password" id="password" placeholder="Admin Password">
     <button class="btn-action" onclick="checkLogin()">Login</button>
 </div>
 
+<!-- MAIN ADMIN PANEL -->
 <div id="uploadPanel">
-    <h1 class="main-title">Hridoy Blood Bank <br> Admin Panel</h1>
-    
-    <div class="card">
-        <div style="display:flex; justify-content: space-between; align-items: center;">
-            <h3>Quick Dashboard</h3>
-            <button onclick="location.reload()" style="padding:5px 15px; border-radius:8px; cursor:pointer; background:#eee; border:none;">Logout</button>
-        </div>
-        <textarea id="jsonInput" placeholder="Paste JSON here for bulk upload..." style="height: 60px; margin-top: 15px;"></textarea>
-        <button class="btn-action" onclick="processUpload()">Bulk Upload</button>
+    <div class="flex-between">
+        <h1 style="color:#ff3b3b;"><i class="fas fa-droplet"></i> Hridoy Blood Bank – Admin</h1>
+        <button onclick="location.reload()" class="btn-sm" style="background:#475569;">Logout</button>
     </div>
 
+    <!-- Dashboard + Blood Group Stats -->
     <div class="card">
-        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-            <h3>Donors List: <span id="donorCount">0</span></h3>
-            <button onclick="loadDonors()" style="padding: 5px 10px; cursor:pointer; border-radius:8px; border:1px solid #ddd;">🔄 Refresh List</button>
+        <h3><i class="fas fa-chart-simple"></i> Quick Dashboard</h3>
+        <div class="stats-grid" id="bloodStatsGrid">
+            <div class="stat-item">Loading...</div>
         </div>
-        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 10px; margin-bottom: 15px;">
-            <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="Search by name, phone or location...">
-            <select id="groupFilter" onchange="filterTable()">
-                <option value="">Groups</option>
-                <option value="A+">A+</option><option value="A-">A-</option>
-                <option value="B+">B+</option><option value="B-">B-</option>
-                <option value="O+">O+</option><option value="O-">O-</option>
+    </div>
+
+    <!-- Add New Donor -->
+    <div class="card">
+        <div class="flex-between">
+            <h3><i class="fas fa-user-plus"></i> Add New Donor</h3>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); gap: 12px;">
+            <input type="text" id="newName" placeholder="Full Name">
+            <input type="tel" id="newPhone" placeholder="Phone Number">
+            <select id="newGroup">
+                <option value="A+">A+</option><option value="A-">A-</option><option value="B+">B+</option>
+                <option value="B-">B-</option><option value="O+">O+</option><option value="O-">O-</option>
                 <option value="AB+">AB+</option><option value="AB-">AB-</option>
+            </select>
+            <select id="newDistrict" onchange="loadUpazilasForNew()"><option value="">Select District</option></select>
+            <select id="newUpazila"><option value="">Select Upazila</option></select>
+            <input type="text" id="newArea" placeholder="Village / Area">
+        </div>
+        <button class="btn-action" style="margin-top: 15px;" onclick="addNewDonor()"><i class="fas fa-save"></i> Save Donor</button>
+    </div>
+
+    <!-- Bulk Upload -->
+    <div class="card">
+        <h3><i class="fas fa-upload"></i> Bulk Upload (JSON)</h3>
+        <textarea id="jsonInput" placeholder='[{"name":"Rahim","phone":"017xxxx","bloodGroup":"O+","district":"Dhaka","upazila":"Savar","area":"Nayabazar"}]' rows="2"></textarea>
+        <button class="btn-action" onclick="processUpload()">Bulk Submit</button>
+        <button class="btn-action" style="background:#2c3e66; margin-top:8px;" onclick="exportToCSV()"><i class="fas fa-download"></i> Export as CSV (filtered list)</button>
+    </div>
+
+    <!-- Donor List + Search + Pagination -->
+    <div class="card">
+        <div class="flex-between">
+            <h3>Donor List <span id="donorCount">0</span> donors</h3>
+            <button onclick="loadDonors()" class="btn-sm" style="background:#334155;"><i class="fas fa-sync-alt"></i> Refresh</button>
+        </div>
+        <div class="search-bar">
+            <input type="text" id="searchInput" placeholder="Search by name, phone, area, district..." onkeyup="filterTableDebounced()">
+            <select id="groupFilter" onchange="filterTable()">
+                <option value="">All Groups</option>
+                <option value="A+">A+</option><option value="A-">A-</option><option value="B+">B+</option>
+                <option value="B-">B-</option><option value="O+">O+</option><option value="O-">O-</option>
+                <option value="AB+">AB+</option><option value="AB-">AB-</option>
+            </select>
+            <select id="districtFilter" onchange="filterTable()">
+                <option value="">All Districts</option>
             </select>
         </div>
         <div class="table-container">
             <table>
-                <thead><tr><th>Donor</th><th>Group</th><th>Address</th><th>Actions</th></tr></thead>
+                <thead>
+                    <tr><th>Donor Info</th><th>Group</th><th>Address</th><th>Actions</th></tr>
+                </thead>
                 <tbody id="donorTableBody"></tbody>
             </table>
         </div>
+        <div class="pagination" id="paginationControls"></div>
     </div>
 </div>
 
+<!-- EDIT MODAL -->
 <div id="editModal">
     <div class="modal-content">
-        <h3>Edit Donor Information</h3>
+        <h3><i class="fas fa-edit"></i> Edit Donor Information</h3>
         <input type="hidden" id="editId">
         <label>Name</label><input type="text" id="editName">
         <label>Phone</label><input type="text" id="editPhone">
         <label>Blood Group</label>
-        <select id="editGroup"><option value="A+">A+</option><option value="B+">B+</option><option value="O+">O+</option><option value="AB+">AB+</option><option value="A-">A-</option><option value="B-">B-</option><option value="O-">O-</option><option value="AB-">AB-</option></select>
-        <label>District</label>
-        <select id="editDistrict" onchange="loadUpazilas()"><option value="">Select District</option></select>
-        <label>Upazila</label>
-        <select id="editUpazila"><option value="">Select Upazila</option></select>
-        <label>Village/Area</label>
-        <input type="text" id="editArea">
-        <button class="btn-action" onclick="updateDonor()">Update Now</button>
-        <button onclick="closeModal()" style="width:100%; margin-top:10px; border:none; background:none; cursor:pointer; color:gray;">Cancel</button>
+        <select id="editGroup"><option value="A+">A+</option><option value="A-">A-</option><option value="B+">B+</option><option value="B-">B-</option><option value="O+">O+</option><option value="O-">O-</option><option value="AB+">AB+</option><option value="AB-">AB-</option></select>
+        <label>District</label><select id="editDistrict" onchange="loadUpazilasForEdit()"><option value="">Select District</option></select>
+        <label>Upazila</label><select id="editUpazila"><option value="">Select Upazila</option></select>
+        <label>Village/Area</label><input type="text" id="editArea">
+        <button class="btn-action" onclick="updateDonor()"><i class="fas fa-check"></i> Update Now</button>
+        <button onclick="closeModal()" style="width:100%; margin-top:12px; background:none; border:none; cursor:pointer; color:gray;">Cancel</button>
     </div>
 </div>
 
 <script>
-const firebaseConfig = {
-    apiKey: "AIzaSyCDX-z22aHNgIO3dzmZ7iOPolCuT-XC_eA",
-    databaseURL: "https://hridoy-blood-bank-bangla-ce1d3-default-rtdb.firebaseio.com"
-};
-firebase.initializeApp(firebaseConfig);
-const fireDb = firebase.database();
+    const firebaseConfig = {
+        apiKey: "AIzaSyCDX-z22aHNgIO3dzmZ7iOPolCuT-XC_eA",
+        databaseURL: "https://hridoy-blood-bank-bangla-ce1d3-default-rtdb.firebaseio.com"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const fireDb = firebase.database();
 
-const bdData = {
-    "Bagerhat": ["Bagerhat Sadar", "Chitalmari", "Fakirhat", "Kachua", "Mollahat", "Mongla", "Morrelganj", "Rampal", "Sarankhola"],
-    "Bandarban": ["Bandarban Sadar", "Thanchi", "Lama", "Naikhongchhari", "Ali Kadam", "Rowangchhari", "Ruma"],
-    "Barguna": ["Barguna Sadar", "Amtali", "Betagi", "Bamna", "Patharghata", "Taltali"],
-    "Barishal": ["Barishal Sadar", "Bakerganj", "Babuganj", "Wazirpur", "Banaripara", "Gournadi", "Agailjhara", "Mehendiganj", "Muladi", "Hizla"],
-    "Bhola": ["Bhola Sadar", "Borhanuddin", "Char Fasson", "Daulatkhan", "Lalmohan", "Manpura", "Tazumuddin"],
-    "Bogra": ["Bogra Sadar", "Adamdighi", "Dhunat", "Dhupchanchia", "Gabtali", "Kahaloo", "Nandigram", "Sariakandi", "Shajahanpur", "Sherpur", "Shibganj", "Sonatala"],
-    "Brahmanbaria": ["Brahmanbaria Sadar", "Ashuganj", "Akhaura", "Bancharampur", "Bijoynagar", "Kasba", "Nabinagar", "Nasirnagar", "Sarail"],
-    "Chandpur": ["Chandpur Sadar", "Faridganj", "Haimchar", "Haziganj", "Kachua", "Matlab North", "Matlab South", "Shahrasti"],
-    "Chapai Nawabganj": ["Chapai Nawabganj Sadar", "Bholahat", "Gomastapur", "Nachole", "Shibganj"],
-    "Chattogram": ["Chattogram Sadar", "Anwara", "Banshkhali", "Boalkhali", "Chandanaish", "Fatickchhari", "Hathazari", "Lohagara", "Mirsharai", "Patiya", "Rangunia", "Raozan", "Sandwip", "Satkania", "Sitakunda"],
-    "Chuadanga": ["Chuadanga Sadar", "Alamdanga", "Damurhuda", "Jibannagar"],
-    "Cumilla": ["Cumilla Sadar", "Barura", "Brahmanpara", "Burichang", "Chandina", "Chauddagram", "Daudkandi", "Debidwar", "Homna", "Laksam", "Lalmai", "Meghna", "Monohargonj", "Muradnagar", "Nangalkot", "Titas"],
-    "Cox's Bazar": ["Cox's Bazar Sadar", "Chakaria", "Kutubdia", "Maheshkhali", "Ramu", "Teknaf", "Ukhia", "Pekua"],
-    "Dhaka": ["Dhaka Sadar", "Dhamrai", "Dohar", "Keraniganj", "Nawabganj", "Savar"],
-    "Dinajpur": ["Dinajpur Sadar", "Birampur", "Birganj", "Biral", "Bochaganj", "Chirirbandar", "Phulbari", "Ghoraghat", "Hakimpur", "Kaharole", "Khansama", "Nawabganj", "Parbatipur"],
-    "Faridpur": ["Faridpur Sadar", "Alfadanga", "Bhanga", "Boalmari", "Charbhadrasan", "Madukhali", "Nagarkanda", "Sadarpur", "Saltha"],
-    "Feni": ["Feni Sadar", "Chhagalnaiya", "Daganbhuiyan", "Parshuram", "Sonagazi", "Fulgazi"],
-    "Gaibandha": ["Gaibandha Sadar", "Phulchhari", "Gobindaganj", "Palashbari", "Sadullapur", "Saghata", "Sundarganj"],
-    "Gazipur": ["Gazipur Sadar", "Kaliakair", "Kaliganj", "Kapasia", "Sreepur"],
-    "Gopalganj": ["Gopalganj Sadar", "Kashiani", "Kotalipara", "Muksudpur", "Tungipara"],
-    "Habiganj": ["Habiganj Sadar", "Ajmiriganj", "Bahubal", "Baniyachong", "Chunarughat", "Lakhai", "Madhabpur", "Nabiganj", "Sayestaganj"],
-    "Jamalpur": ["Jamalpur Sadar", "Bakshiganj", "Dewanganj", "Islampur", "Madarganj", "Melandaha", "Sarishabari"],
-    "Jashore": ["Jashore Sadar", "Abhaynagar", "Bagherpara", "Chaugachha", "Jhikargachha", "Keshabpur", "Manirampur", "Sharsha"],
-    "Jhalokathi": ["Jhalokathi Sadar", "Kathalia", "Nalchity", "Rajapur"],
-    "Jhenaidah": ["Jhenaidah Sadar", "Harinakunda", "Kaliganj", "Kotchandpur", "Maheshpur", "Shailkupa"],
-    "Joypurhat": ["Joypurhat Sadar", "Akkelpur", "Kalai", "Khetlal", "Panchbibi"],
-    "Khagrachhari": ["Khagrachhari Sadar", "Dighinala", "Lakshmichhari", "Mahalchhari", "Manikchhari", "Matiranga", "Panchhari", "Ramgarh"],
-    "Khulna": ["Khulna Sadar", "Batiaghata", "Dacope", "Dumuria", "Dighalia", "Koyra", "Paikgachha", "Phultala", "Rupsha", "Terokhada"],
-    "Kishoreganj": ["Kishoreganj Sadar", "Austagram", "Bajitpur", "Bhairab", "Hossainpur", "Itna", "Karimganj", "Katiadi", "Kuliarchar", "Mithamain", "Nikli", "Pakundia", "Tarail"],
-    "Kurigram": ["Kurigram Sadar", "Bhurungamari", "Char Rajibpur", "Chilmari", "Phulbari", "Nageshwari", "Rajarhat", "Roumari", "Ulipur"],
-    "Kushtia": ["Kushtia Sadar", "Bheramara", "Daulatpur", "Khoksa", "Kumarkhali", "Mirpur"],
-    "Lakshmipur": ["Lakshmipur Sadar", "Raipur", "Ramganj", "Ramgati", "Kamalnagar"],
-    "Lalmonirhat": ["Lalmonirhat Sadar", "Aditmari", "Hatibandha", "Kaliganj", "Patgram"],
-    "Madaripur": ["Madaripur Sadar", "Kalkini", "Rajoir", "Shibchar"],
-    "Magura": ["Magura Sadar", "Mohammadpur", "Shalikha", "Sreepur"],
-    "Manikganj": ["Manikganj Sadar", "Singair", "Shibalaya", "Saturia", "Harirampur", "Ghirior", "Daulatpur"],
-    "Meherpur": ["Meherpur Sadar", "Gangni", "Mujibnagar"],
-    "Moulvibazar": ["Moulvibazar Sadar", "Barlekha", "Juri", "Kamalganj", "Kulaura", "Rajnagar", "Sreemangal"],
-    "Munshiganj": ["Munshiganj Sadar", "Gazaria", "Lohajang", "Sirajdikhan", "Sreenagar", "Tongibari"],
-    "Mymensingh": ["Mymensingh Sadar", "Bhaluka", "Dhobaura", "Fulbaria", "Gaffargaon", "Gauripur", "Haluaghat", "Ishwarganj", "Muktagachha", "Nandail", "Phulpur", "Trishal", "Tara Khanda"],
-    "Naogaon": ["Naogaon Sadar", "Atrai", "Badalgachhi", "Dhamoirhat", "Manda", "Mahadevpur", "Niamatpur", "Patnitala", "Porsha", "Raninagar", "Sapahar"],
-    "Narail": ["Narail Sadar", "Kalia", "Lohagara"],
-    "Narayanganj": ["Narayanganj Sadar", "Araihazar", "Bandar", "Rupganj", "Sonargaon"],
-    "Narsingdi": ["Narsingdi Sadar", "Belabo", "Monohardi", "Palash", "Raipura", "Shibpur"],
-    "Natore": ["Natore Sadar", "Bagatipara", "Baraigram", "Gurudaspur", "Lalpur", "Singra", "Naldanga"],
-    "Netrokona": ["Netrokona Sadar", "Atpara", "Barhatta", "Durgapur", "Khaliajuri", "Kalmakanda", "Kendua", "Madan", "Mohanganj", "Purbadhala"],
-    "Nilphamari": ["Nilphamari Sadar", "Dimla", "Domar", "Jaldhaka", "Kishoreganj", "Saidpur"],
-    "Noakhali": ["Noakhali Sadar", "Begumganj", "Chatkhil", "Companyganj", "Hatiya", "Senbagh", "Sonaimuri", "Subarnachar", "Kabirhat"],
-    "Pabna": ["Pabna Sadar", "Atgharia", "Bera", "Bhangura", "Chatmohar", "Faridpur", "Ishwardi", "Santhia", "Sujanagar"],
-    "Panchagarh": ["Panchagarh Sadar", "Atwari", "Boda", "Debiganj", "Tetulia"],
-    "Patuakhali": ["Patuakhali Sadar", "Bauphal", "Dashmina", "Galachipa", "Kalapara", "Mirzaganj", "Dumki", "Rangabali"],
-    "Pirojpur": ["Pirojpur Sadar", "Bhandaria", "Kawkhali", "Mathbaria", "Nazirpur", "Nesarabad", "Indurkani"],
-    "Rajbari": ["Rajbari Sadar", "Baliakandi", "Goalandaghat", "Pangsha", "Kalukhali"],
-    "Rajshahi": ["Rajshahi Sadar", "Bagha", "Bagmara", "Charghat", "Durgapur", "Godagari", "Mohanpur", "Paba", "Puthia", "Tanore"],
-    "Rangamati": ["Rangamati Sadar", "Bagaichhari", "Barkal", "Kawkhali", "Belaichhari", "Kaptai", "Juraichhari", "Langadu", "Naniarchar", "Rajasthali"],
-    "Rangpur": ["Rangpur Sadar", "Badarganj", "Gangachara", "Kaunia", "Mithapukur", "Pirgachha", "Pirganj", "Taraganj"],
-    "Satkhira": ["Satkhira Sadar", "Assasuni", "Debhata", "Kalaroa", "Kaliganj", "Shyamnagar", "Tala"],
-    "Shariatpur": ["Shariatpur Sadar", "Bhedarganj", "Damudya", "Gosairhat", "Naria", "Zajira"],
-    "Sherpur": ["Sherpur Sadar", "Jhenaigati", "Nakla", "Nalitabari", "Sreebardi"],
-    "Sirajganj": ["Sirajganj Sadar", "Belkuchi", "Chauhali", "Kamarkhanda", "Kazipur", "Raiganj", "Shahjadpur", "Tarash", "Ullahpara"],
-    "Sunamganj": ["Sunamganj Sadar", "Bishwamandarpur", "Chhatak", "Derai", "Dharamapasha", "Dowarabazar", "Jagannathpur", "Jamalganj", "Sullah", "Tahirpur", "Shantiganj"],
-    "Sylhet": ["Sylhet Sadar", "Balaganj", "Beanibazar", "Bishwanath", "Fenchuganj", "Golapganj", "Gowainghat", "Jaintiapur", "Kanaighat", "Osmani Nagar", "South Surma", "Zakiganj"],
-    "Tangail": ["Tangail Sadar", "Basail", "Bhuapur", "Delduar", "Gopalpur", "Ghatail", "Kalihati", "Madhupur", "Mirzapur", "Nagarpur", "Sakhipur", "Dhanbari"],
-    "Thakurgaon": ["Thakurgaon Sadar", "Baliadangi", "Haripur", "Pirganj", "Ranisankail"]
-};
+    const bdData = {
+        "Bagerhat": ["Bagerhat Sadar", "Chitalmari", "Fakirhat", "Kachua", "Mollahat", "Mongla", "Morrelganj", "Rampal", "Sarankhola"],
+        "Bandarban": ["Bandarban Sadar", "Thanchi", "Lama", "Naikhongchhari", "Ali Kadam", "Rowangchhari", "Ruma"],
+        "Barguna": ["Barguna Sadar", "Amtali", "Betagi", "Bamna", "Patharghata", "Taltali"],
+        "Barishal": ["Barishal Sadar", "Bakerganj", "Babuganj", "Wazirpur", "Banaripara", "Gournadi", "Agailjhara", "Mehendiganj", "Muladi", "Hizla"],
+        "Bhola": ["Bhola Sadar", "Borhanuddin", "Char Fasson", "Daulatkhan", "Lalmohan", "Manpura", "Tazumuddin"],
+        "Bogra": ["Bogra Sadar", "Adamdighi", "Dhunat", "Dhupchanchia", "Gabtali", "Kahaloo", "Nandigram", "Sariakandi", "Shajahanpur", "Sherpur", "Shibganj", "Sonatala"],
+        "Brahmanbaria": ["Brahmanbaria Sadar", "Ashuganj", "Akhaura", "Bancharampur", "Bijoynagar", "Kasba", "Nabinagar", "Nasirnagar", "Sarail"],
+        "Chandpur": ["Chandpur Sadar", "Faridganj", "Haimchar", "Haziganj", "Kachua", "Matlab North", "Matlab South", "Shahrasti"],
+        "Chapai Nawabganj": ["Chapai Nawabganj Sadar", "Bholahat", "Gomastapur", "Nachole", "Shibganj"],
+        "Chattogram": ["Chattogram Sadar", "Anwara", "Banshkhali", "Boalkhali", "Chandanaish", "Fatickchhari", "Hathazari", "Lohagara", "Mirsharai", "Patiya", "Rangunia", "Raozan", "Sandwip", "Satkania", "Sitakunda"],
+        "Chuadanga": ["Chuadanga Sadar", "Alamdanga", "Damurhuda", "Jibannagar"],
+        "Cumilla": ["Cumilla Sadar", "Barura", "Brahmanpara", "Burichang", "Chandina", "Chauddagram", "Daudkandi", "Debidwar", "Homna", "Laksam", "Lalmai", "Meghna", "Monohargonj", "Muradnagar", "Nangalkot", "Titas"],
+        "Cox's Bazar": ["Cox's Bazar Sadar", "Chakaria", "Kutubdia", "Maheshkhali", "Ramu", "Teknaf", "Ukhia", "Pekua"],
+        "Dhaka": ["Dhaka Sadar", "Dhamrai", "Dohar", "Keraniganj", "Nawabganj", "Savar"],
+        "Dinajpur": ["Dinajpur Sadar", "Birampur", "Birganj", "Biral", "Bochaganj", "Chirirbandar", "Phulbari", "Ghoraghat", "Hakimpur", "Kaharole", "Khansama", "Nawabganj", "Parbatipur"],
+        "Faridpur": ["Faridpur Sadar", "Alfadanga", "Bhanga", "Boalmari", "Charbhadrasan", "Madukhali", "Nagarkanda", "Sadarpur", "Saltha"],
+        "Feni": ["Feni Sadar", "Chhagalnaiya", "Daganbhuiyan", "Parshuram", "Sonagazi", "Fulgazi"],
+        "Gaibandha": ["Gaibandha Sadar", "Phulchhari", "Gobindaganj", "Palashbari", "Sadullapur", "Saghata", "Sundarganj"],
+        "Gazipur": ["Gazipur Sadar", "Kaliakair", "Kaliganj", "Kapasia", "Sreepur"],
+        "Gopalganj": ["Gopalganj Sadar", "Kashiani", "Kotalipara", "Muksudpur", "Tungipara"],
+        "Habiganj": ["Habiganj Sadar", "Ajmiriganj", "Bahubal", "Baniyachong", "Chunarughat", "Lakhai", "Madhabpur", "Nabiganj", "Sayestaganj"],
+        "Jamalpur": ["Jamalpur Sadar", "Bakshiganj", "Dewanganj", "Islampur", "Madarganj", "Melandaha", "Sarishabari"],
+        "Jashore": ["Jashore Sadar", "Abhaynagar", "Bagherpara", "Chaugachha", "Jhikargachha", "Keshabpur", "Manirampur", "Sharsha"],
+        "Jhalokathi": ["Jhalokathi Sadar", "Kathalia", "Nalchity", "Rajapur"],
+        "Jhenaidah": ["Jhenaidah Sadar", "Harinakunda", "Kaliganj", "Kotchandpur", "Maheshpur", "Shailkupa"],
+        "Joypurhat": ["Joypurhat Sadar", "Akkelpur", "Kalai", "Khetlal", "Panchbibi"],
+        "Khagrachhari": ["Khagrachhari Sadar", "Dighinala", "Lakshmichhari", "Mahalchhari", "Manikchhari", "Matiranga", "Panchhari", "Ramgarh"],
+        "Khulna": ["Khulna Sadar", "Batiaghata", "Dacope", "Dumuria", "Dighalia", "Koyra", "Paikgachha", "Phultala", "Rupsha", "Terokhada"],
+        "Kishoreganj": ["Kishoreganj Sadar", "Austagram", "Bajitpur", "Bhairab", "Hossainpur", "Itna", "Karimganj", "Katiadi", "Kuliarchar", "Mithamain", "Nikli", "Pakundia", "Tarail"],
+        "Kurigram": ["Kurigram Sadar", "Bhurungamari", "Char Rajibpur", "Chilmari", "Phulbari", "Nageshwari", "Rajarhat", "Roumari", "Ulipur"],
+        "Kushtia": ["Kushtia Sadar", "Bheramara", "Daulatpur", "Khoksa", "Kumarkhali", "Mirpur"],
+        "Lakshmipur": ["Lakshmipur Sadar", "Raipur", "Ramganj", "Ramgati", "Kamalnagar"],
+        "Lalmonirhat": ["Lalmonirhat Sadar", "Aditmari", "Hatibandha", "Kaliganj", "Patgram"],
+        "Madaripur": ["Madaripur Sadar", "Kalkini", "Rajoir", "Shibchar"],
+        "Magura": ["Magura Sadar", "Mohammadpur", "Shalikha", "Sreepur"],
+        "Manikganj": ["Manikganj Sadar", "Singair", "Shibalaya", "Saturia", "Harirampur", "Ghirior", "Daulatpur"],
+        "Meherpur": ["Meherpur Sadar", "Gangni", "Mujibnagar"],
+        "Moulvibazar": ["Moulvibazar Sadar", "Barlekha", "Juri", "Kamalganj", "Kulaura", "Rajnagar", "Sreemangal"],
+        "Munshiganj": ["Munshiganj Sadar", "Gazaria", "Lohajang", "Sirajdikhan", "Sreenagar", "Tongibari"],
+        "Mymensingh": ["Mymensingh Sadar", "Bhaluka", "Dhobaura", "Fulbaria", "Gaffargaon", "Gauripur", "Haluaghat", "Ishwarganj", "Muktagachha", "Nandail", "Phulpur", "Trishal", "Tara Khanda"],
+        "Naogaon": ["Naogaon Sadar", "Atrai", "Badalgachhi", "Dhamoirhat", "Manda", "Mahadevpur", "Niamatpur", "Patnitala", "Porsha", "Raninagar", "Sapahar"],
+        "Narail": ["Narail Sadar", "Kalia", "Lohagara"],
+        "Narayanganj": ["Narayanganj Sadar", "Araihazar", "Bandar", "Rupganj", "Sonargaon"],
+        "Narsingdi": ["Narsingdi Sadar", "Belabo", "Monohardi", "Palash", "Raipura", "Shibpur"],
+        "Natore": ["Natore Sadar", "Bagatipara", "Baraigram", "Gurudaspur", "Lalpur", "Singra", "Naldanga"],
+        "Netrokona": ["Netrokona Sadar", "Atpara", "Barhatta", "Durgapur", "Khaliajuri", "Kalmakanda", "Kendua", "Madan", "Mohanganj", "Purbadhala"],
+        "Nilphamari": ["Nilphamari Sadar", "Dimla", "Domar", "Jaldhaka", "Kishoreganj", "Saidpur"],
+        "Noakhali": ["Noakhali Sadar", "Begumganj", "Chatkhil", "Companyganj", "Hatiya", "Senbagh", "Sonaimuri", "Subarnachar", "Kabirhat"],
+        "Pabna": ["Pabna Sadar", "Atgharia", "Bera", "Bhangura", "Chatmohar", "Faridpur", "Ishwardi", "Santhia", "Sujanagar"],
+        "Panchagarh": ["Panchagarh Sadar", "Atwari", "Boda", "Debiganj", "Tetulia"],
+        "Patuakhali": ["Patuakhali Sadar", "Bauphal", "Dashmina", "Galachipa", "Kalapara", "Mirzaganj", "Dumki", "Rangabali"],
+        "Pirojpur": ["Pirojpur Sadar", "Bhandaria", "Kawkhali", "Mathbaria", "Nazirpur", "Nesarabad", "Indurkani"],
+        "Rajbari": ["Rajbari Sadar", "Baliakandi", "Goalandaghat", "Pangsha", "Kalukhali"],
+        "Rajshahi": ["Rajshahi Sadar", "Bagha", "Bagmara", "Charghat", "Durgapur", "Godagari", "Mohanpur", "Paba", "Puthia", "Tanore"],
+        "Rangamati": ["Rangamati Sadar", "Bagaichhari", "Barkal", "Kawkhali", "Belaichhari", "Kaptai", "Juraichhari", "Langadu", "Naniarchar", "Rajasthali"],
+        "Rangpur": ["Rangpur Sadar", "Badarganj", "Gangachara", "Kaunia", "Mithapukur", "Pirgachha", "Pirganj", "Taraganj"],
+        "Satkhira": ["Satkhira Sadar", "Assasuni", "Debhata", "Kalaroa", "Kaliganj", "Shyamnagar", "Tala"],
+        "Shariatpur": ["Shariatpur Sadar", "Bhedarganj", "Damudya", "Gosairhat", "Naria", "Zajira"],
+        "Sherpur": ["Sherpur Sadar", "Jhenaigati", "Nakla", "Nalitabari", "Sreebardi"],
+        "Sirajganj": ["Sirajganj Sadar", "Belkuchi", "Chauhali", "Kamarkhanda", "Kazipur", "Raiganj", "Shahjadpur", "Tarash", "Ullahpara"],
+        "Sunamganj": ["Sunamganj Sadar", "Bishwamandarpur", "Chhatak", "Derai", "Dharamapasha", "Dowarabazar", "Jagannathpur", "Jamalganj", "Sullah", "Tahirpur", "Shantiganj"],
+        "Sylhet": ["Sylhet Sadar", "Balaganj", "Beanibazar", "Bishwanath", "Fenchuganj", "Golapganj", "Gowainghat", "Jaintiapur", "Kanaighat", "Osmani Nagar", "South Surma", "Zakiganj"],
+        "Tangail": ["Tangail Sadar", "Basail", "Bhuapur", "Delduar", "Gopalpur", "Ghatail", "Kalihati", "Madhupur", "Mirzapur", "Nagarpur", "Sakhipur", "Dhanbari"],
+        "Thakurgaon": ["Thakurgaon Sadar", "Baliadangi", "Haripur", "Pirganj", "Ranisankail"]
+    };
 
-// District Dropdown initialization
-const distSelect = document.getElementById("editDistrict");
-Object.keys(bdData).sort().forEach(dist => {
-    let opt = document.createElement("option"); opt.value = dist; opt.innerText = dist;
-    distSelect.appendChild(opt);
-});
-
-function loadUpazilas() {
-    const dist = distSelect.value;
-    const upaSelect = document.getElementById("editUpazila");
-    upaSelect.innerHTML = '<option value="">Select Upazila</option>';
-    if(dist && bdData[dist]) {
-        bdData[dist].sort().forEach(upa => {
-            let opt = document.createElement("option"); opt.value = upa; opt.innerText = upa;
-            upaSelect.appendChild(opt);
+    function populateDistricts(selectElement) {
+        selectElement.innerHTML = '<option value="">Select District</option>';
+        Object.keys(bdData).sort().forEach(dist => {
+            let opt = document.createElement("option"); opt.value = dist; opt.innerText = dist;
+            selectElement.appendChild(opt);
         });
     }
-}
 
-let allDonors = [];
+    const newDistrictSel = document.getElementById("newDistrict");
+    const newUpazilaSel = document.getElementById("newUpazila");
+    populateDistricts(newDistrictSel);
+    window.loadUpazilasForNew = function() {
+        const dist = newDistrictSel.value;
+        newUpazilaSel.innerHTML = '<option value="">Select Upazila</option>';
+        if(dist && bdData[dist]) {
+            bdData[dist].sort().forEach(upa => {
+                let opt = document.createElement("option"); opt.value = upa; opt.innerText = upa;
+                newUpazilaSel.appendChild(opt);
+            });
+        }
+    };
+    newDistrictSel.addEventListener("change", loadUpazilasForNew);
 
-function checkLogin() {
-    if(document.getElementById("password").value === "335877") {
-        document.getElementById("loginBox").style.display = "none";
-        document.getElementById("uploadPanel").style.display = "block";
+    const editDistrictSel = document.getElementById("editDistrict");
+    populateDistricts(editDistrictSel);
+    window.loadUpazilasForEdit = function() {
+        const dist = editDistrictSel.value;
+        const upaSelect = document.getElementById("editUpazila");
+        upaSelect.innerHTML = '<option value="">Select Upazila</option>';
+        if(dist && bdData[dist]) {
+            bdData[dist].sort().forEach(upa => {
+                let opt = document.createElement("option"); opt.value = upa; opt.innerText = upa;
+                upaSelect.appendChild(opt);
+            });
+        }
+    };
+    editDistrictSel.addEventListener("change", loadUpazilasForEdit);
+
+    let allDonors = [];
+    let filteredDonors = [];
+    let currentPage = 1;
+    const rowsPerPage = 12;
+
+    async function loadDonors() {
+        document.getElementById("loadingOverlay").style.display = "flex";
+        try {
+            const snapshot = await fireDb.ref("donors").once("value");
+            allDonors = [];
+            snapshot.forEach(child => {
+                let d = child.val();
+                d.id = child.key;
+                if(!d.district) d.district = "";
+                if(!d.upazila) d.upazila = "";
+                if(!d.area) d.area = d.address || "";
+                allDonors.push(d);
+            });
+            allDonors.reverse();
+            filterTable();
+        } catch(e) { console.error(e); alert("Error loading data"); }
+        document.getElementById("loadingOverlay").style.display = "none";
+    }
+
+    function filterTable() {
+        const search = document.getElementById("searchInput").value.toLowerCase();
+        const group = document.getElementById("groupFilter").value;
+        const district = document.getElementById("districtFilter").value;
+        filteredDonors = allDonors.filter(d => {
+            const nameMatch = d.name?.toLowerCase().includes(search);
+            const phoneMatch = d.phone?.includes(search);
+            const addrMatch = (d.area+d.district+d.upazila)?.toLowerCase().includes(search);
+            const groupMatch = !group || d.bloodGroup === group;
+            const districtMatch = !district || d.district === district;
+            return (nameMatch || phoneMatch || addrMatch) && groupMatch && districtMatch;
+        });
+        currentPage = 1;
+        updateBloodStats();
+        renderPagination();
+        renderTablePage();
+        updateDistrictFilter();
+    }
+
+    let debounceTimer;
+    function filterTableDebounced() {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => filterTable(), 300);
+    }
+
+    function renderTablePage() {
+        const start = (currentPage-1)*rowsPerPage;
+        const paginated = filteredDonors.slice(start, start+rowsPerPage);
+        const tbody = document.getElementById("donorTableBody");
+        document.getElementById("donorCount").innerText = filteredDonors.length;
+        let html = "";
+        paginated.forEach(d => {
+            let addressDisplay = "";
+            if(d.area || d.upazila || d.district) addressDisplay = [d.area, d.upazila, d.district].filter(v=>v).join(", ");
+            else addressDisplay = d.address || "N/A";
+            html += `<tr>
+                <td><b>${escapeHtml(d.name)}</b><br><small>📞 ${d.phone}</small></td>
+                <td><span class="blood-badge">${d.bloodGroup}</span></td>
+                <td><small>📍 ${escapeHtml(addressDisplay)}</small></td>
+                <td><div class="btn-group">
+                    <a href="tel:${d.phone}" class="btn-sm bg-call"><i class="fas fa-phone-alt"></i></a>
+                    <button class="btn-sm bg-edit" onclick="openEditModal('${d.id}')"><i class="fas fa-pen"></i></button>
+                    <button class="btn-sm bg-del" onclick="deleteDonor('${d.id}')"><i class="fas fa-trash"></i></button>
+                </div></td>
+            </tr>`;
+        });
+        tbody.innerHTML = html;
+    }
+
+    function renderPagination() {
+        const totalPages = Math.ceil(filteredDonors.length / rowsPerPage);
+        const container = document.getElementById("paginationControls");
+        if(totalPages <= 1) { container.innerHTML = ""; return; }
+        let btns = `<button class="page-btn" onclick="changePage(${currentPage-1})" ${currentPage===1?'disabled':''}><i class="fas fa-chevron-left"></i></button>`;
+        for(let i=1; i<=totalPages; i++) {
+            if(i===1 || i===totalPages || (i>=currentPage-2 && i<=currentPage+2)) {
+                btns += `<button class="page-btn ${i===currentPage?'active':''}" onclick="changePage(${i})">${i}</button>`;
+            } else if(i===currentPage-3 || i===currentPage+3) btns += `<span>...</span>`;
+        }
+        btns += `<button class="page-btn" onclick="changePage(${currentPage+1})" ${currentPage===totalPages?'disabled':''}><i class="fas fa-chevron-right"></i></button>`;
+        container.innerHTML = btns;
+    }
+    function changePage(page) { if(page<1 || page>Math.ceil(filteredDonors.length/rowsPerPage)) return; currentPage=page; renderTablePage(); renderPagination(); }
+
+    function updateBloodStats() {
+        const stats = {"A+":0,"A-":0,"B+":0,"B-":0,"O+":0,"O-":0,"AB+":0,"AB-":0};
+        filteredDonors.forEach(d => { if(stats[d.bloodGroup] !== undefined) stats[d.bloodGroup]++; });
+        const grid = document.getElementById("bloodStatsGrid");
+        grid.innerHTML = Object.entries(stats).map(([grp, cnt]) => `<div class="stat-item"><div class="stat-blood">${grp}</div><div class="stat-count">${cnt}</div></div>`).join('');
+    }
+
+    function updateDistrictFilter() {
+        const districtSet = new Set(allDonors.map(d=>d.district).filter(d=>d));
+        const distFilter = document.getElementById("districtFilter");
+        const currentVal = distFilter.value;
+        distFilter.innerHTML = '<option value="">All Districts</option>';
+        [...districtSet].sort().forEach(d => {
+            let opt = document.createElement("option"); opt.value = d; opt.innerText = d;
+            if(currentVal === d) opt.selected = true;
+            distFilter.appendChild(opt);
+        });
+    }
+
+    async function addNewDonor() {
+        const name = document.getElementById("newName").value.trim();
+        const phone = document.getElementById("newPhone").value.trim();
+        const bloodGroup = document.getElementById("newGroup").value;
+        const district = document.getElementById("newDistrict").value;
+        const upazila = document.getElementById("newUpazila").value;
+        const area = document.getElementById("newArea").value.trim();
+        if(!name || !phone) { alert("Name and Phone are required"); return; }
+        const newRef = fireDb.ref("donors").push();
+        await newRef.set({
+            name, phone, bloodGroup, district, upazila, area,
+            timestamp: Date.now()
+        });
+        alert("Donor added successfully");
+        document.getElementById("newName").value = "";
+        document.getElementById("newPhone").value = "";
+        document.getElementById("newArea").value = "";
         loadDonors();
-    } else alert("Incorrect Password!");
-}
-
-async function loadDonors() {
-    document.getElementById("loadingOverlay").style.display = "flex";
-    try {
-        const snapshot = await fireDb.ref("donors").once("value");
-        allDonors = [];
-        snapshot.forEach(child => { allDonors.push({ id: child.key, ...child.val() }); });
-        allDonors.reverse();
-        renderTable(allDonors);
-    } catch (e) { console.error(e); }
-    document.getElementById("loadingOverlay").style.display = "none";
-}
-
-function renderTable(data) {
-    const tbody = document.getElementById("donorTableBody");
-    document.getElementById("donorCount").innerText = data.length;
-    let html = "";
-    data.forEach(item => {
-        html += `<tr>
-            <td><b>${item.name}</b><br><small>📞 ${item.phone}</small></td>
-            <td><span class="blood-badge">${item.bloodGroup}</span></td>
-            <td><small>📍 ${item.address || 'N/A'}</small></td>
-            <td><div class="btn-group">
-                <a href="tel:${item.phone}" class="btn-sm bg-call" title="Call">📞</a>
-                <button class="btn-sm bg-edit" onclick="openEditModal('${item.id}','${item.name}','${item.phone}','${item.bloodGroup}','${item.address || ''}')">Edit</button>
-                <button class="btn-sm bg-del" onclick="deleteDonor('${item.id}')">Del</button>
-            </div></td>
-        </tr>`;
-    });
-    tbody.innerHTML = html;
-}
-
-function filterTable() {
-    const search = document.getElementById("searchInput").value.toLowerCase();
-    const group = document.getElementById("groupFilter").value;
-    const filtered = allDonors.filter(d => 
-        (d.name.toLowerCase().includes(search) || d.phone.includes(search) || (d.address && d.address.toLowerCase().includes(search))) &&
-        (group === "" || d.bloodGroup === group)
-    );
-    renderTable(filtered);
-}
-
-function deleteDonor(id) {
-    if(confirm("Are you sure you want to delete this donor?")) {
-        fireDb.ref("donors/" + id).remove().then(() => loadDonors());
     }
-}
 
-function openEditModal(id, name, phone, group, addr) {
-    document.getElementById("editId").value = id;
-    document.getElementById("editName").value = name;
-    document.getElementById("editPhone").value = phone;
-    document.getElementById("editGroup").value = group;
-    document.getElementById("editArea").value = addr;
-    document.getElementById("editModal").style.display = "flex";
-}
+    function openEditModal(id) {
+        const donor = allDonors.find(d => d.id === id);
+        if(!donor) return;
+        document.getElementById("editId").value = donor.id;
+        document.getElementById("editName").value = donor.name;
+        document.getElementById("editPhone").value = donor.phone;
+        document.getElementById("editGroup").value = donor.bloodGroup;
+        document.getElementById("editDistrict").value = donor.district || "";
+        document.getElementById("editArea").value = donor.area || "";
+        loadUpazilasForEdit();
+        setTimeout(() => {
+            if(donor.upazila) document.getElementById("editUpazila").value = donor.upazila;
+        }, 50);
+        document.getElementById("editModal").style.display = "flex";
+    }
 
-function closeModal() { document.getElementById("editModal").style.display = "none"; }
+    async function updateDonor() {
+        const id = document.getElementById("editId").value;
+        const name = document.getElementById("editName").value;
+        const phone = document.getElementById("editPhone").value;
+        const bloodGroup = document.getElementById("editGroup").value;
+        const district = document.getElementById("editDistrict").value;
+        const upazila = document.getElementById("editUpazila").value;
+        const area = document.getElementById("editArea").value;
+        await fireDb.ref("donors/"+id).update({ name, phone, bloodGroup, district, upazila, area });
+        closeModal();
+        loadDonors();
+    }
 
-async function updateDonor() {
-    const id = document.getElementById("editId").value;
-    const area = document.getElementById("editArea").value;
-    const upa = document.getElementById("editUpazila").value;
-    const dist = document.getElementById("editDistrict").value;
-    
-    let fullAddress = area;
-    if(upa) fullAddress += (fullAddress ? ", " : "") + upa;
-    if(dist) fullAddress += (fullAddress ? ", " : "") + dist;
-    
-    await fireDb.ref("donors/" + id).update({
-        name: document.getElementById("editName").value,
-        phone: document.getElementById("editPhone").value,
-        bloodGroup: document.getElementById("editGroup").value,
-        address: fullAddress || area
-    });
-    closeModal();
-    loadDonors();
-}
+    // 🔥 DELETION WITHOUT CONFIRMATION – DIRECT REMOVE
+    function deleteDonor(id) {
+        fireDb.ref("donors/"+id).remove().then(() => loadDonors());
+    }
 
-function processUpload() {
-    try {
-        const data = JSON.parse(document.getElementById("jsonInput").value);
-        let list = Array.isArray(data) ? data : [data];
-        const updates = {};
-        list.forEach(item => {
-            const newKey = fireDb.ref().child('donors').push().key;
-            updates['/donors/' + newKey] = {
-                name: item.name || "Unknown",
-                phone: item.phone || "N/A",
-                bloodGroup: item.bloodGroup || item.group || "N/A",
-                address: item.address || "N/A",
-                time: Date.now()
-            };
-        });
-        fireDb.ref().update(updates).then(() => {
-            alert("Bulk Upload Successful!");
-            document.getElementById("jsonInput").value = "";
+    function processUpload() {
+        try {
+            const data = JSON.parse(document.getElementById("jsonInput").value);
+            const list = Array.isArray(data) ? data : [data];
+            const updates = {};
+            for(let item of list) {
+                const key = fireDb.ref().child('donors').push().key;
+                updates[`/donors/${key}`] = {
+                    name: item.name || "Unknown",
+                    phone: item.phone || "N/A",
+                    bloodGroup: item.bloodGroup || item.group || "N/A",
+                    district: item.district || "",
+                    upazila: item.upazila || "",
+                    area: item.area || item.address || "",
+                    timestamp: Date.now()
+                };
+            }
+            fireDb.ref().update(updates).then(()=>{ alert("Bulk upload successful!"); document.getElementById("jsonInput").value=""; loadDonors(); });
+        } catch(e) { alert("Invalid JSON format"); }
+    }
+
+    function exportToCSV() {
+        let dataToExport = filteredDonors.length ? filteredDonors : allDonors;
+        const headers = ["Name", "Phone", "Blood Group", "District", "Upazila", "Area"];
+        const rows = dataToExport.map(d => [d.name, d.phone, d.bloodGroup, d.district||"", d.upazila||"", d.area||""]);
+        const csvContent = [headers, ...rows].map(row => row.map(cell => `"${cell}"`).join(",")).join("\n");
+        const blob = new Blob(["\uFEFF" + csvContent], {type: "text/csv;charset=utf-8;"});
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.href = url; link.setAttribute("download","donors_export.csv"); document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(url);
+    }
+
+    function closeModal() { document.getElementById("editModal").style.display = "none"; }
+    function checkLogin() {
+        if(document.getElementById("password").value === "335877") {
+            document.getElementById("loginBox").style.display = "none";
+            document.getElementById("uploadPanel").style.display = "block";
             loadDonors();
-        });
-    } catch(e) { alert("Invalid JSON Format!"); }
-}
+        } else alert("Incorrect Password!");
+    }
+    function escapeHtml(str) { if(!str) return ""; return str.replace(/[&<>]/g, function(m){if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); }
 </script>
 </body>
 </html>
